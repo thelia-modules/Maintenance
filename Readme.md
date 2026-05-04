@@ -16,7 +16,7 @@ But you can still navigate in your site with index_dev.php.
 Add it in your main thelia composer.json file
 
 ```
-composer require vlopes/maintenance-module:~1.0
+composer require thelia/maintenance-module:~1.0
 ```
 
 ## Usage

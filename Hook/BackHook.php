@@ -12,7 +12,7 @@ use Thelia\Core\Hook\BaseHook;
 
 class BackHook extends BaseHook
 {
-    public function onModuleConfig(HookRenderEvent $event)
+    public function onModuleConfig(HookRenderEvent $event): void
     {
         $maintenanceFile = Maintenance::getMaintenanceFile();
 

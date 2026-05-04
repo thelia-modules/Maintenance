@@ -9,16 +9,12 @@ use Thelia\Controller\Admin\BaseAdminController;
 use Thelia\Core\Security\AccessManager;
 use Thelia\Core\Security\Resource\AdminResources;
 use Thelia\Core\Translation\Translator;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Routing\Attribute\Route;
 
-/**
- * @Route("/admin/module/Maintenance", name="maintenance")
- */
+#[Route("/admin/module/Maintenance", name:"maintenance")]
 class ConfigurationController extends BaseAdminController
 {
-    /**
-     * @Route("/configuration", name="_save", methods="POST")
-     */
+    #[Route("/configuration", name:"_save", methods: ['POST'])]
     public function configurationAction()
     {
         if (null !== $response = $this->checkAuth(array(AdminResources::MODULE), 'Maintenance', AccessManager::VIEW)) {
@@ -57,9 +53,7 @@ class ConfigurationController extends BaseAdminController
         return $this->generateSuccessRedirect($form);
     }
 
-    /**
-     * @Route("/toggle", name="_toggle_maintenance", methods="POST")
-     */
+    #[Route("/toggle", name:"_toggle_maintenance", methods: ['POST'])]
     public function toggleMaintenanceAction()
     {
         if (null !== $response = $this->checkAuth(array(AdminResources::MODULE), 'Maintenance', AccessManager::VIEW)) {

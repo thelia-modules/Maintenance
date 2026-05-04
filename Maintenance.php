@@ -43,7 +43,7 @@ class Maintenance extends BaseModule
     /**
      * @return SplFileInfo
      */
-    public static function getMaintenanceFile()
+    public static function getMaintenanceFile(): SplFileInfo
     {
         if (!file_exists(self::MAINTENANCE_FILE)) {
             copy(THELIA_MODULE_DIR . 'Maintenance' . DS . 'templates'. DS .'maintenance.html', self::MAINTENANCE_FILE);
