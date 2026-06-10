@@ -6,9 +6,8 @@ use Thelia\Form\BaseForm;
 
 class ToggleMaintenanceForm extends BaseForm
 {
-    protected function buildForm()
+    protected function buildForm(): void
     {
-
     }
 
     public static function getName(): string

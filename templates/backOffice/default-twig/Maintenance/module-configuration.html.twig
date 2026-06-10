@@ -1,0 +1,85 @@
+<style>
+    #maintenance_page {
+        text-align: center;
+        padding: 150px;
+        font: 20px Helvetica, sans-serif;
+        color: {{ fontColor }};
+        background-color: {{ backgroundColor }};
+    }
+    #maintenance_page article { display: block; text-align: left; width: 650px; margin: 0 auto; }
+    #maintenance_page h1 { font-size: 50px; }
+    #maintenance_page a { color: {{ linkColor }}; text-decoration: none; }
+    #maintenance_page a:hover { color: {{ fontColor }}; text-decoration: none; }
+</style>
+
+<div class="card mb-3">
+    <div class="card-header">
+        <div class="d-flex align-items-center justify-content-between">
+            <span>{{ 'Maintenance module configuration'|trans({}, 'maintenance.bo.default') }}</span>
+            <form action="{{ path('maintenance_toggle_maintenance') }}" method="post" class="d-inline">
+                <input type="hidden" name="{{ toggleForm.vars.full_name }}[success_url]" value="{{ app.request.requestUri }}">
+                <input type="hidden" name="{{ toggleForm.vars.full_name }}[_token]" value="{{ toggleForm._token.vars.value }}">
+                {% if isInMaintenance %}
+                    <button type="submit" class="btn btn-danger btn-sm">{{ 'Disable maintenance'|trans({}, 'maintenance.bo.default') }}</button>
+                {% else %}
+                    <button type="submit" class="btn btn-success btn-sm">{{ 'Enable maintenance'|trans({}, 'maintenance.bo.default') }}</button>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if not isIndexWritable %}
+            <div class="alert alert-danger">
+                {{ 'The file web/index.php is not writable please change the permissions or the module will not work'|trans({}, 'maintenance.bo.default') }}
+            </div>
+        {% endif %}
+        {% if not isWebWritable %}
+            <div class="alert alert-danger">
+                {{ 'The directory web is not writable please change the permissions or the module will not work'|trans({}, 'maintenance.bo.default') }}
+            </div>
+        {% endif %}
+
+        <div class="row">
+            <div class="col-md-4">
+                <form action="{{ path('maintenance_save') }}" method="post">
+                    <input type="hidden" name="{{ configForm.vars.full_name }}[success_url]" value="{{ app.request.requestUri }}">
+                    <input type="hidden" name="{{ configForm.vars.full_name }}[_token]" value="{{ configForm._token.vars.value }}">
+
+                    <div class="mb-3">
+                        <label for="maintenance_title" class="form-label">{{ 'Title'|trans({}, 'maintenance.bo.default') }}</label>
+                        <input id="maintenance_title" class="form-control" name="{{ configForm.vars.full_name }}[title]" type="text" value="{{ title }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="maintenance_message" class="form-label">{{ 'Message'|trans({}, 'maintenance.bo.default') }}</label>
+                        <textarea id="maintenance_message" class="form-control" name="{{ configForm.vars.full_name }}[message]" rows="3">{{ message }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="maintenance_bg_color" class="form-label">{{ 'Background color'|trans({}, 'maintenance.bo.default') }}</label>
+                        <input id="maintenance_bg_color" class="form-control form-control-color" name="{{ configForm.vars.full_name }}[background_color]" type="color" value="{{ backgroundColor }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="maintenance_font_color" class="form-label">{{ 'Font color'|trans({}, 'maintenance.bo.default') }}</label>
+                        <input id="maintenance_font_color" class="form-control form-control-color" name="{{ configForm.vars.full_name }}[font_color]" type="color" value="{{ fontColor }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="maintenance_link_color" class="form-label">{{ 'Link color'|trans({}, 'maintenance.bo.default') }}</label>
+                        <input id="maintenance_link_color" class="form-control form-control-color" name="{{ configForm.vars.full_name }}[link_color]" type="color" value="{{ linkColor }}">
+                    </div>
+
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-save me-1"></i>
+                        {{ 'Save for preview'|trans({}, 'maintenance.bo.default') }}
+                    </button>
+                </form>
+            </div>
+            <div class="col-md-8" id="maintenance_page">
+                <article>
+                    <h1>{{ title }}</h1>
+                    <div>
+                        <p>{{ message|raw }}</p>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </div>
+</div>
