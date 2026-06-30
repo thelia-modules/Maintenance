@@ -33,11 +33,38 @@ class ConfigurationController extends BaseAdminController
 
             $content = $maintenanceFile->getContents();
 
-            $newContent = preg_replace("/<!--TITLE START-->((.|\n)*)<!--TITLE END-->/", "<!--TITLE START-->".$data['title']."<!--TITLE END-->", $content);
-            $newContent = preg_replace("/<!--MESSAGE START-->((.|\n)*)<!--MESSAGE END-->/", "<!--MESSAGE START-->".$data['message']."<!--MESSAGE END-->", $newContent);
-            $newContent = preg_replace("/background_color\*\/((.|\n)*)\/\*background_color/", "background_color*/".$data['background_color']."/*background_color", $newContent);
-            $newContent = preg_replace("/font_color\*\/((.|\n)*)\/\*font_color/", "font_color*/".$data['font_color']."/*font_color", $newContent);
-            $newContent = preg_replace("/link_color\*\/((.|\n)*)\/\*link_color/", "link_color*/".$data['link_color']."/*link_color", $newContent);
+            $title = $data['title'];
+            $message = $data['message'];
+            $backgroundColor = $data['background_color'];
+            $fontColor = $data['font_color'];
+            $linkColor = $data['link_color'];
+
+            // Use preg_replace_callback to avoid backreference interpretation of $ and \ in replacement strings.
+            $newContent = preg_replace_callback(
+                "/<!--TITLE START-->((.|\n)*)<!--TITLE END-->/",
+                static fn() => '<!--TITLE START-->'.$title.'<!--TITLE END-->',
+                $content
+            );
+            $newContent = preg_replace_callback(
+                "/<!--MESSAGE START-->((.|\n)*)<!--MESSAGE END-->/",
+                static fn() => '<!--MESSAGE START-->'.$message.'<!--MESSAGE END-->',
+                $newContent
+            );
+            $newContent = preg_replace_callback(
+                "/background_color\*\/((.|\n)*)\/\*background_color/",
+                static fn() => 'background_color*/'.$backgroundColor.'/*background_color',
+                $newContent
+            );
+            $newContent = preg_replace_callback(
+                "/font_color\*\/((.|\n)*)\/\*font_color/",
+                static fn() => 'font_color*/'.$fontColor.'/*font_color',
+                $newContent
+            );
+            $newContent = preg_replace_callback(
+                "/link_color\*\/((.|\n)*)\/\*link_color/",
+                static fn() => 'link_color*/'.$linkColor.'/*link_color',
+                $newContent
+            );
 
             file_put_contents($maintenanceFile->getPathname(), $newContent);
         } catch (\Exception $e) {
