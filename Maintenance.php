@@ -46,7 +46,10 @@ class Maintenance extends BaseModule
     public static function getMaintenanceFile(): SplFileInfo
     {
         if (!file_exists(self::MAINTENANCE_FILE)) {
-            copy(THELIA_MODULE_DIR . 'Maintenance' . DS . 'templates'. DS .'maintenance.html', self::MAINTENANCE_FILE);
+            $source = THELIA_MODULE_DIR . 'Maintenance' . DS . 'templates' . DS . 'maintenance.html';
+            if (!copy($source, self::MAINTENANCE_FILE)) {
+                throw new \RuntimeException(sprintf('Unable to copy maintenance template from "%s" to "%s". Check directory permissions.', $source, self::MAINTENANCE_FILE));
+            }
         }
 
         $finder = new Finder();
