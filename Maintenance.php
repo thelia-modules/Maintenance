@@ -56,6 +56,8 @@ class Maintenance extends BaseModule
         foreach ($finder as $file) {
             return $file;
         }
+
+        throw new \RuntimeException(sprintf('Unable to locate or create the maintenance file at "%s".', self::MAINTENANCE_FILE));
     }
 
     public static function configureServices(ServicesConfigurator $servicesConfigurator): void
