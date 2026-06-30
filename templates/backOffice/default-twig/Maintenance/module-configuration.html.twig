@@ -76,6 +76,7 @@
                 <article>
                     <h1>{{ title }}</h1>
                     <div>
+                        {# message may contain HTML markup (e.g. links) entered by a trusted admin — |raw is intentional #}
                         <p>{{ message|raw }}</p>
                     </div>
                 </article>
