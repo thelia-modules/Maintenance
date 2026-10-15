@@ -28,14 +28,19 @@
         </div>
     </div>
     <div class="card-body">
-        {% if not isIndexWritable %}
+        {% if isInMaintenance %}
+            <div class="alert alert-warning">
+                {{ 'The shop is closed: visitors get the maintenance page (HTTP 503). The back office, signed-in administrators and the allowed paths and addresses below still get through.'|trans({}, 'maintenance.bo.default') }}
+            </div>
+        {% endif %}
+        {% if hasLegacyIndexGuard %}
             <div class="alert alert-danger">
-                {{ 'The file web/index.php is not writable please change the permissions or the module will not work'|trans({}, 'maintenance.bo.default') }}
+                {{ 'A maintenance guard written by a previous version of this module is still in public/index.php: it keeps the shop closed whatever this switch says. Remove the block that starts with //⚠--MAINTENANCE by hand.'|trans({}, 'maintenance.bo.default') }}
             </div>
         {% endif %}
         {% if not isWebWritable %}
             <div class="alert alert-danger">
-                {{ 'The directory web is not writable please change the permissions or the module will not work'|trans({}, 'maintenance.bo.default') }}
+                {{ 'The public directory is not writable: the maintenance page cannot be saved.'|trans({}, 'maintenance.bo.default') }}
             </div>
         {% endif %}
 
@@ -82,5 +87,36 @@
                 </article>
             </div>
         </div>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header">{{ 'Access during maintenance'|trans({}, 'maintenance.bo.default') }}</div>
+    <div class="card-body">
+        <form action="{{ path('maintenance_access') }}" method="post">
+            <input type="hidden" name="{{ accessForm.vars.full_name }}[success_url]" value="{{ app.request.requestUri }}">
+            <input type="hidden" name="{{ accessForm.vars.full_name }}[_token]" value="{{ accessForm._token.vars.value }}">
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="maintenance_allowed_paths" class="form-label">{{ 'Allowed paths'|trans({}, 'maintenance.bo.default') }}</label>
+                    <textarea id="maintenance_allowed_paths" class="form-control font-monospace" name="{{ accessForm.vars.full_name }}[allowed_paths]" rows="5" placeholder="/payment/callback">{{ allowedPaths }}</textarea>
+                    <div class="form-text">{{ 'One path per line. A path also lets its sub-paths through: /module/paypal covers /module/paypal/notify. Use it for the return URLs of payment providers.'|trans({}, 'maintenance.bo.default') }}</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="maintenance_allowed_ips" class="form-label">{{ 'Allowed IP addresses'|trans({}, 'maintenance.bo.default') }}</label>
+                    <textarea id="maintenance_allowed_ips" class="form-control font-monospace" name="{{ accessForm.vars.full_name }}[allowed_ips]" rows="5" placeholder="192.0.2.10&#10;198.51.100.0/24">{{ allowedIps }}</textarea>
+                    <div class="form-text">
+                        {{ 'One address or CIDR range per line.'|trans({}, 'maintenance.bo.default') }}
+                        {% if clientIp %}{{ 'Your address: %ip'|trans({'%ip': clientIp}, 'maintenance.bo.default') }}{% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-success">
+                <i class="bi bi-save me-1"></i>
+                {{ 'Save'|trans({}, 'maintenance.bo.default') }}
+            </button>
+        </form>
     </div>
 </div>
