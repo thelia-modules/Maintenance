@@ -2,11 +2,11 @@
 
 namespace Maintenance\Controller;
 
+use Maintenance\Form\AccessForm;
 use Maintenance\Form\ConfigurationForm;
 use Maintenance\Form\ToggleMaintenanceForm;
 use Maintenance\Maintenance;
-use Symfony\Component\Finder\Finder;
-use Symfony\Component\Finder\SplFileInfo;
+use Maintenance\Service\AccessList;
 use Symfony\Component\HttpFoundation\Response;
 use Thelia\Controller\Admin\BaseAdminController;
 use Thelia\Core\Security\AccessManager;
@@ -20,7 +20,7 @@ class ConfigurationController extends BaseAdminController
     #[Route("/configuration", name: "_save", methods: ['POST'])]
     public function configurationAction(): Response
     {
-        if (null !== $response = $this->checkAuth([AdminResources::MODULE], 'Maintenance', AccessManager::VIEW)) {
+        if (null !== $response = $this->checkAuth([AdminResources::MODULE], 'Maintenance', AccessManager::UPDATE)) {
             return $response;
         }
 
@@ -68,12 +68,7 @@ class ConfigurationController extends BaseAdminController
 
             file_put_contents($maintenanceFile->getPathname(), $newContent);
         } catch (\Exception $e) {
-            $this->getRequest()?->getSession()?->getFlashBag()->add(
-                'error',
-                Translator::getInstance()->trans('Error', [], Maintenance::DOMAIN_NAME).': '.$e->getMessage()
-            );
-
-            return $this->generateRedirectFromRoute('admin.module.configure', [], ['module_code' => 'Maintenance']);
+            return $this->errorRedirect($e);
         }
 
         return $this->generateSuccessRedirect($form);
@@ -82,7 +77,7 @@ class ConfigurationController extends BaseAdminController
     #[Route("/toggle", name: "_toggle_maintenance", methods: ['POST'])]
     public function toggleMaintenanceAction(): Response
     {
-        if (null !== $response = $this->checkAuth([AdminResources::MODULE], 'Maintenance', AccessManager::VIEW)) {
+        if (null !== $response = $this->checkAuth([AdminResources::MODULE], 'Maintenance', AccessManager::UPDATE)) {
             return $response;
         }
 
@@ -91,35 +86,52 @@ class ConfigurationController extends BaseAdminController
         try {
             $this->validateForm($form);
 
-            $finder = new Finder();
-            $finder->files()->depth('== 0')->in(THELIA_WEB_DIR)->name('index.php');
-
-            $contents = '';
-            $filePath = '';
-
-            /** @var SplFileInfo $file */
-            foreach ($finder as $file) {
-                $contents = $file->getContents();
-                $filePath = $file->getPathname();
-            }
-
-            if (preg_match('/\/\/⚠((.|\n)*)⚠/', $contents)) {
-                $newContent = preg_replace('/\/\/⚠((.|\n)*)⚠/', '', $contents);
-            } else {
-                $maintenanceTag = "**/\n\n//⚠--MAINTENANCE\nhttp_response_code(503);\ninclude('maintenance.html');\ndie();\n//__⚠\n";
-                $newContent = preg_replace('/\*\*\/\n\n/i', $maintenanceTag, $contents);
-            }
-
-            file_put_contents($filePath, $newContent);
+            Maintenance::setConfigValue(Maintenance::CONFIG_ENABLED, Maintenance::isEnabled() ? '0' : '1');
         } catch (\Exception $e) {
-            $this->getRequest()?->getSession()?->getFlashBag()->add(
-                'error',
-                Translator::getInstance()->trans('Error', [], Maintenance::DOMAIN_NAME).': '.$e->getMessage()
-            );
-
-            return $this->generateRedirectFromRoute('admin.module.configure', [], ['module_code' => 'Maintenance']);
+            return $this->errorRedirect($e);
         }
 
         return $this->generateSuccessRedirect($form);
+    }
+
+    #[Route("/access", name: "_access", methods: ['POST'])]
+    public function accessAction(): Response
+    {
+        if (null !== $response = $this->checkAuth([AdminResources::MODULE], 'Maintenance', AccessManager::UPDATE)) {
+            return $response;
+        }
+
+        $form = $this->createForm(AccessForm::getName());
+
+        try {
+            $data = $this->validateForm($form)->getData();
+
+            $paths = (string) ($data['allowed_paths'] ?? '');
+            $ips = (string) ($data['allowed_ips'] ?? '');
+            $invalid = [...AccessList::invalidPaths($paths), ...AccessList::invalidIps($ips)];
+
+            if ([] !== $invalid) {
+                throw new \InvalidArgumentException(
+                    Translator::getInstance()->trans('Invalid entries: %entries', ['%entries' => implode(', ', $invalid)], Maintenance::DOMAIN_NAME)
+                );
+            }
+
+            Maintenance::setConfigValue(Maintenance::CONFIG_ALLOWED_PATHS, implode("\n", AccessList::lines($paths)));
+            Maintenance::setConfigValue(Maintenance::CONFIG_ALLOWED_IPS, implode("\n", AccessList::lines($ips)));
+        } catch (\Exception $e) {
+            return $this->errorRedirect($e);
+        }
+
+        return $this->generateSuccessRedirect($form);
+    }
+
+    private function errorRedirect(\Exception $e): Response
+    {
+        $this->getRequest()?->getSession()?->getFlashBag()->add(
+            'error',
+            Translator::getInstance()->trans('Error', [], Maintenance::DOMAIN_NAME).': '.$e->getMessage()
+        );
+
+        return $this->generateRedirectFromRoute('admin.module.configure', [], ['module_code' => 'Maintenance']);
     }
 }

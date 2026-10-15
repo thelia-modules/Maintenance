@@ -2,12 +2,11 @@
 
 namespace Maintenance\Hook;
 
+use Maintenance\Form\AccessForm;
 use Maintenance\Form\ConfigurationForm;
 use Maintenance\Form\ToggleMaintenanceForm;
 use Maintenance\Maintenance;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-use Symfony\Component\Finder\Finder;
-use Symfony\Component\Finder\SplFileInfo;
 use Thelia\Core\Event\Hook\HookRenderEvent;
 use Thelia\Core\Form\TheliaFormFactory;
 use Thelia\Core\Hook\BaseHook;
@@ -44,22 +43,6 @@ class BackHook extends BaseHook
         preg_match('/font_color\*\/((.|\n)*?)\/\*font_color/', $content, $fontColor);
         preg_match('/link_color\*\/((.|\n)*?)\/\*link_color/', $content, $linkColor);
 
-        $finder = new Finder();
-        $finder->files()->depth('== 0')->in(THELIA_WEB_DIR)->name('index.php');
-
-        $indexContent = '';
-
-        /** @var SplFileInfo $file */
-        foreach ($finder as $file) {
-            $indexContent = $file->getContents();
-        }
-        $isInMaintenance = 0;
-
-        if (preg_match('/\/\/⚠((.|\n)*)⚠/', $indexContent)) {
-            $isInMaintenance = 1;
-        }
-
-        $isIndexWritable = is_writable(THELIA_WEB_DIR.'index.php');
         $isWebWritable = is_writable(THELIA_WEB_DIR);
 
         $configForm = $this->formFactory->createForm(ConfigurationForm::getName());
@@ -67,6 +50,9 @@ class BackHook extends BaseHook
 
         $toggleForm = $this->formFactory->createForm(ToggleMaintenanceForm::getName());
         $toggleForm->createView();
+
+        $accessForm = $this->formFactory->createForm(AccessForm::getName());
+        $accessForm->createView();
 
         $event->add(
             $this->render(
@@ -77,11 +63,15 @@ class BackHook extends BaseHook
                     'backgroundColor' => html_entity_decode($backgroundColor[1] ?? ''),
                     'fontColor' => html_entity_decode($fontColor[1] ?? ''),
                     'linkColor' => html_entity_decode($linkColor[1] ?? ''),
-                    'isInMaintenance' => $isInMaintenance,
-                    'isIndexWritable' => $isIndexWritable,
+                    'isInMaintenance' => Maintenance::isEnabled(),
+                    'hasLegacyIndexGuard' => Maintenance::hasLegacyIndexGuard(),
                     'isWebWritable' => $isWebWritable,
+                    'allowedPaths' => Maintenance::getConfigValue(Maintenance::CONFIG_ALLOWED_PATHS, ''),
+                    'allowedIps' => Maintenance::getConfigValue(Maintenance::CONFIG_ALLOWED_IPS, ''),
+                    'clientIp' => $this->getRequest()?->getClientIp(),
                     'configForm' => $configForm->getView(),
                     'toggleForm' => $toggleForm->getView(),
+                    'accessForm' => $accessForm->getView(),
                 ]
             )
         );
